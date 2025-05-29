@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Atrisi Karyawan</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 700px; margin: auto;}
+        h1 { color: #333; text-align: center; }
+        form { display: flex; flex-direction: column; gap: 15px; }
+        label { font-weight: bold; margin-bottom: 5px; }
+        select, input[type="text"], input[type="number"], input[type="submit"] {
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            box-sizing: border-box; 
+            width: 100%; 
+        }
+        input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: auto; 
+            align-self: center; 
+            padding: 10px 20px;
+        }
+        input[type="submit"]:hover { background-color: #0056b3; }
+        .info-text { font-size: 0.9em; color: #555; margin-top: 5px; }
+        .form-section { border: 1px solid #eee; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .form-section h3 { margin-top: 0; color: #0056b3; }
+        .feature-input-group { margin-bottom: 10px; }
+        .feature-input-group label { display: block; }
+
+        /* Styles for dataset information */
+        .dataset-info { margin-bottom: 20px; padding: 15px; background-color: #e9ecef; border-radius: 5px;}
+        .dataset-info h2 { margin-top: 0; color: #0056b3; text-align: left;}
+        .dataset-info details { margin-bottom: 10px; }
+        .dataset-info summary { font-weight: bold; cursor: pointer; color: #333; }
+        .dataset-info .feature-explanation { margin-left: 20px; font-size: 0.95em; }
+        .dataset-info .feature-explanation p { margin: 5px 0; }
+        .dataset-info .feature-explanation ul { margin: 5px 0; padding-left: 20px; }
+        .dataset-info .feature-explanation li { margin-bottom: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prediksi Atrisi Karyawan</h1>
+
+        <div class="dataset-info">
+            <details>
+                <summary>Tentang Dataset dan Penjelasan Fitur (Klik untuk Lihat)</summary>
+                <h2>Tentang Dataset</h2>
+                <p>{{ about_dataset_text }}</p>
+                
+                <h3>Penjelasan Fitur Input Karyawan:</h3>
+                {% if feature_details_list %}
+                    {% for feature in feature_details_list %}
+                        <div class="feature-explanation">
+                            <p><strong>{{ feature.label_id }}:</strong> {# Menggunakan label_id untuk judul penjelasan #}
+                            {% set explanation = feature_explanations.get(feature.name) %} {# Penjelasan tetap diambil berdasarkan nama asli fitur #}
+                            {% if explanation %}
+                                {% if explanation is mapping and explanation.description %}
+                                    {{ explanation.description }}
+                                    {% if explanation.map %}
+                                    <ul>
+                                        {% for key, value in explanation.map.items() %}
+                                        <li>{{ key }}: {{ value }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% endif %}
+                                {% else %}
+                                    {{ explanation }}
+                                {% endif %}
+                            {% else %}
+                                <span>Penjelasan umum tidak tersedia.</span>
+                            {% endif %}
+                            </p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>Informasi fitur tidak dapat dimuat.</p>
+                {% endif %}
+            </details>
+        </div>
+
+        <form method="POST">
+            <div class="form-section">
+                <h3>Parameter Model</h3>
+                <div>
+                    <label for="split_ratio">Perbandingan Data Train:Test:</label>
+                    <select name="split_ratio" id="split_ratio">
+                        <option value="80:20" selected>80:20</option>
+                        <option value="70:30">70:30</option>
+                        <option value="90:10">90:10</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="architecture">Arsitektur Model:</label>
+                    <select name="architecture" id="architecture">
+                        <option value="DenseNetCustom" selected>DenseNet (Custom)</option>
+                        <option value="ResMLPCustom">ResMLP (Custom)</option>
+                        <option value="ResNetCustom">ResNet (Custom)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="optimizer">Optimizer:</label>
+                    <select name="optimizer" id="optimizer">
+                        <option value="adam" selected>Adam</option>
+                        <option value="sgd">SGD</option>
+                        <option value="RMSprop">RMSprop</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Input Data Karyawan untuk Prediksi</h3>
+                <p class="info-text">Masukkan nilai untuk setiap fitur di bawah ini. Kosongkan semua jika tidak ingin melakukan prediksi saat ini.</p>
+                {% if feature_details_list %}
+                    {% for feature in feature_details_list %}
+                    <div class="feature-input-group">
+                        <label for="feature_{{ feature.name }}">{{ feature.label_id }}:</label> {# Menggunakan feature.label_id untuk label form #}
+                        {% if feature.type == 'select' %}
+                            <select name="feature_{{ feature.name }}" id="feature_{{ feature.name }}">
+                                <option value="" {% if not feature.example and not (feature.options and feature.example in feature.options) %}selected{% endif %}>-- Pilih --</option> 
+                                {% for option_val in feature.options %}
+                                    <option value="{{ option_val }}" {% if option_val == feature.example %}selected{% endif %}>
+                                        {% set explanation_data = feature_explanations.get(feature.name) %}
+                                        {% if explanation_data and explanation_data is mapping and explanation_data.map and explanation_data.map.get(option_val|int if option_val.isdigit() else option_val) %}
+                                            {{ explanation_data.map.get(option_val|int if option_val.isdigit() else option_val) }} (Nilai: {{ option_val }})
+                                        {% elif explanation_data and explanation_data is mapping and explanation_data.map and explanation_data.map.get(option_val) %}
+                                            {{ explanation_data.map.get(option_val) }} (Nilai: {{ option_val }})
+                                        {% else %}
+                                            {{ option_val }}
+                                        {% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        {% elif feature.type == 'number' %}
+                            <input type="number" name="feature_{{ feature.name }}" id="feature_{{ feature.name }}"
+                                   {% if feature.min is defined and feature.min is not none %}min="{{ feature.min }}"{% endif %}
+                                   {% if feature.max is defined and feature.max is not none %}max="{{ feature.max }}"{% endif %}
+                                   placeholder="Contoh: {{ feature.example if feature.example else '' }}"
+                                   value="{{ feature.example if feature.example else '' }}">
+                        {% else %} 
+                            <input type="text" name="feature_{{ feature.name }}" id="feature_{{ feature.name }}"
+                                   placeholder="Contoh: {{ feature.example if feature.example else '' }}"
+                                   value="{{ feature.example if feature.example else '' }}">
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:red;">Tidak dapat memuat daftar fitur untuk input. Pastikan file dataset 'WA_Fn-UseC_-HR-Employee-Attrition.csv' ada.</p>
+                {% endif %}
+            </div>
+
+            <input type="submit" value="Latih Model dan Prediksi">
+        </form>
+    </div>
+</body>
+</html>

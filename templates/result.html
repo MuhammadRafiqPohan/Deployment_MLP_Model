@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Prediksi Atrisi</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin:auto;}
+        h1, h2 { color: #333; text-align: center; }
+        .results-summary p, .results-summary li { font-size: 1.1em; margin: 10px 0; }
+        .results-summary strong { color: #007bff; }
+        .plot-container { text-align: center; margin-top: 20px; }
+        .plot-container img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }
+        .back-link { display: block; text-align: center; margin-top: 30px; padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; transition: background-color 0.3s ease; width: fit-content; margin-left: auto; margin-right: auto;}
+        .back-link:hover { background-color: #0056b3; }
+        .prediction-section { margin-top: 20px; padding: 15px; background-color: #e9ecef; border-radius: 4px; }
+        .prediction-section h3 { margin-top: 0; }
+        .input-details { margin-top:10px; padding:10px; background-color:#f8f9fa; border: 1px solid #dee2e6; border-radius:4px; font-size:0.9em; }
+        .input-details h4 { margin-top: 0; margin-bottom: 8px; }
+        .input-details table { width: 100%; border-collapse: collapse; }
+        .input-details th, .input-details td { text-align: left; padding: 6px; border-bottom: 1px solid #ddd; }
+        .input-details th { background-color: #e9ecef; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hasil Model dan Prediksi</h1>
+
+        <div class="results-summary">
+            <h2>Ringkasan Pelatihan Model</h2>
+            <p>Parameter yang Dipilih:</p>
+            <ul>
+                <li>Rasio Train:Test: <strong>{{ selected_split_ratio }}</strong></li>
+                <li>Arsitektur Model: <strong>{{ selected_architecture }}</strong></li>
+                <li>Optimizer: <strong>{{ selected_optimizer }}</strong></li>
+            </ul>
+            <p>Akurasi Model pada Data Test: <strong>{{ accuracy }}</strong></p>
+        </div>
+
+        {% if prediction_result %}
+        <div class="prediction-section">
+            <h3>Hasil Prediksi untuk Input Data Karyawan</h3>
+            <p><strong>{{ prediction_result }}</strong></p>
+            
+            {% if user_submitted_input_str %}
+            <div class="input-details">
+                <h4>Data Input yang Anda Masukkan:</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fitur</th>
+                            <th>Nilai yang Diinput</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set submitted_values = user_submitted_input_str.split(',') %}
+                        {% for i in range(input_features_labels_list|length) %}
+                        <tr>
+                            <td>{{ input_features_labels_list[i] }}</td>
+                            <td>{{ submitted_values[i] if i < submitted_values|length else '(tidak ada)' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% elif prediction_result != "Input karyawan tidak disediakan atau semua field kosong." %} 
+            {# Jika ada hasil prediksi tapi tidak ada string input, berarti ada error sebelumnya #}
+            <p style="color:orange;">Detail input karyawan tidak dapat ditampilkan.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if plot_image_filename %}
+        <div class="plot-container">
+            <h2>Grafik Training & Validation</h2>
+            <img src="{{ url_for('static', filename='images/' + plot_image_filename) }}" alt="Grafik Training dan Validasi Model">
+        </div>
+        {% else %}
+        <p style="text-align:center; color:red;">Grafik training tidak dapat ditampilkan.</p>
+        {% endif %}
+
+        <a href="{{ url_for('index') }}" class="back-link">Kembali ke Halaman Utama</a>
+    </div>
+</body>
+</html>
